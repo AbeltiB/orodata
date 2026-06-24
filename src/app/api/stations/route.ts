@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { queryDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const result = await queryDb("SELECT * FROM stations ORDER BY id ASC");
-  return NextResponse.json({ data: result.rows });
+  const stations = await prisma.station.findMany({ orderBy: { id: "asc" } });
+  return NextResponse.json({ data: stations });
 }
 
 export async function POST(req: Request) {
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Name and location are required." }, { status: 400 });
   }
 
-  await queryDb("INSERT INTO stations (name, location) VALUES ($1, $2)", [name, location]);
+  await prisma.station.create({ data: { name, location } });
   return NextResponse.json({ data: true });
 }
 
@@ -26,7 +26,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Station id, name, and location are required." }, { status: 400 });
   }
 
-  await queryDb("UPDATE stations SET name = $1, location = $2 WHERE id = $3", [name, location, id]);
+  await prisma.station.update({ where: { id }, data: { name, location } });
   return NextResponse.json({ data: true });
 }
 
@@ -37,6 +37,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Station id is required." }, { status: 400 });
   }
 
-  await queryDb("DELETE FROM stations WHERE id = $1", [id]);
+  await prisma.station.delete({ where: { id } });
   return NextResponse.json({ data: true });
 }

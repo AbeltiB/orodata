@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { queryDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const result = await queryDb("SELECT * FROM employees ORDER BY id ASC");
-  return NextResponse.json({ data: result.rows });
+  const employees = await prisma.employee.findMany({ orderBy: { id: "asc" } });
+  return NextResponse.json({ data: employees });
 }
 
 export async function POST(req: Request) {
@@ -14,10 +14,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "All required fields are needed." }, { status: 400 });
   }
 
-  await queryDb(
-    "INSERT INTO employees (first_name, middle_name, last_name, email, phone, role, username, password, station_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-    [first_name, middle_name, last_name, email, phone, role, username, password, station_id]
-  );
+  await prisma.employee.create({
+    data: { first_name, middle_name: middle_name ?? null, last_name, email, phone, role, username, password, station_id },
+  });
 
   return NextResponse.json({ data: true });
 }
@@ -30,10 +29,10 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "All required fields are needed for update." }, { status: 400 });
   }
 
-  await queryDb(
-    "UPDATE employees SET first_name = $1, middle_name = $2, last_name = $3, email = $4, phone = $5, role = $6, username = $7, password = $8, station_id = $9 WHERE id = $10",
-    [first_name, middle_name, last_name, email, phone, role, username, password, station_id, id]
-  );
+  await prisma.employee.update({
+    where: { id },
+    data: { first_name, middle_name: middle_name ?? null, last_name, email, phone, role, username, password, station_id },
+  });
 
   return NextResponse.json({ data: true });
 }
@@ -45,6 +44,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Employee id is required." }, { status: 400 });
   }
 
-  await queryDb("DELETE FROM employees WHERE id = $1", [id]);
+  await prisma.employee.delete({ where: { id } });
   return NextResponse.json({ data: true });
 }

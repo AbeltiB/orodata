@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Station {
+  id       Int     @id @default(autoincrement())
+  name     String
+  location String
+  employees Employee[]
+  posMachines PosMachine[]
+
+  @@map("stations")
+}
+
+model Fare {
+  id           Int    @id @default(autoincrement())
+  vehicle_kind String
+  road_type    String
+  level        String
+  multiplier   Float
+
+  @@map("fares")
+}
+
+model Employee {
+  id          Int     @id @default(autoincrement())
+  first_name  String
+  middle_name String?
+  last_name   String
+  email       String
+  phone       String
+  role        String
+  username    String
+  password    String
+  station_id  Int
+  station     Station @relation(fields: [station_id], references: [id])
+
+  @@map("employees")
+}
+
+model PosMachine {
+  id            Int     @id @default(autoincrement())
+  serial_number String
+  version       String
+  type          String
+  station_id    Int
+  station       Station @relation(fields: [station_id], references: [id])
+
+  @@map("pos_machines")
+}

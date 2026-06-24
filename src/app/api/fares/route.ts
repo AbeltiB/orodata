@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { queryDb } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const result = await queryDb("SELECT * FROM fares ORDER BY id ASC");
-  return NextResponse.json({ data: result.rows });
+  const fares = await prisma.fare.findMany({ orderBy: { id: "asc" } });
+  return NextResponse.json({ data: fares });
 }
 
 export async function POST(req: Request) {
@@ -19,10 +19,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Multiplier must be a positive number." }, { status: 400 });
   }
 
-  await queryDb(
-    "INSERT INTO fares (vehicle_kind, level, road_type, multiplier) VALUES ($1, $2, $3, $4)",
-    [vehicle_kind, level, road_type, parsedMultiplier]
-  );
+  await prisma.fare.create({ data: { vehicle_kind, level, road_type, multiplier: parsedMultiplier } });
 
   return NextResponse.json({ data: true });
 }
@@ -40,10 +37,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Multiplier must be a positive number." }, { status: 400 });
   }
 
-  await queryDb(
-    "UPDATE fares SET vehicle_kind = $1, level = $2, road_type = $3, multiplier = $4 WHERE id = $5",
-    [vehicle_kind, level, road_type, parsedMultiplier, id]
-  );
+  await prisma.fare.update({ where: { id }, data: { vehicle_kind, level, road_type, multiplier: parsedMultiplier } });
 
   return NextResponse.json({ data: true });
 }
@@ -55,6 +49,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Fare id is required." }, { status: 400 });
   }
 
-  await queryDb("DELETE FROM fares WHERE id = $1", [id]);
+  await prisma.fare.delete({ where: { id } });
   return NextResponse.json({ data: true });
 }
