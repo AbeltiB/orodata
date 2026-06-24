@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiError, hasPrismaCode } from "@/lib/apiErrors";
+
+export const dynamic = "force-dynamic";
+
+function asId(value: unknown) { return Number(value); }
 
 export const dynamic = "force-dynamic";
 
