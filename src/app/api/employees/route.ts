@@ -6,15 +6,6 @@ export const dynamic = "force-dynamic";
 
 function asId(value: unknown) { return Number(value); }
 
-export const dynamic = "force-dynamic";
-
-function apiError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Unexpected server error.";
-  return NextResponse.json({ error: message }, { status: 500 });
-}
-
-function asId(value: unknown) { return Number(value); }
-
 export async function GET() {
   try {
     const employees = await prisma.employee.findMany({ orderBy: { id: "asc" } });
