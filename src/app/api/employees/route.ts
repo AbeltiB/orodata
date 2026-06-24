@@ -6,6 +6,15 @@ export const dynamic = "force-dynamic";
 
 function asId(value: unknown) { return Number(value); }
 
+export const dynamic = "force-dynamic";
+
+function apiError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Unexpected server error.";
+  return NextResponse.json({ error: message }, { status: 500 });
+}
+
+function asId(value: unknown) { return Number(value); }
+
 export async function GET() {
   try {
     const employees = await prisma.employee.findMany({ orderBy: { id: "asc" } });
@@ -25,7 +34,7 @@ export async function POST(req: Request) {
     const employee = await prisma.employee.create({ data: { first_name, middle_name: middle_name || null, last_name, email, phone: phone || "", role, username, password, isActive: Boolean(isActive), station_id: stationId } });
     return NextResponse.json({ data: employee });
   } catch (error) {
-    if (hasPrismaCode(error, "P2003")) return NextResponse.json({ error: "Selected station does not exist." }, { status: 400 });
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2003") return NextResponse.json({ error: "Selected station does not exist." }, { status: 400 });
     return apiError(error);
   }
 }
@@ -43,8 +52,8 @@ export async function PATCH(req: Request) {
     const employee = await prisma.employee.update({ where: { id: employeeId }, data });
     return NextResponse.json({ data: employee });
   } catch (error) {
-    if (hasPrismaCode(error, "P2025")) return NextResponse.json({ error: "Employee not found." }, { status: 404 });
-    if (hasPrismaCode(error, "P2003")) return NextResponse.json({ error: "Selected station does not exist." }, { status: 400 });
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2025") return NextResponse.json({ error: "Employee not found." }, { status: 404 });
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2003") return NextResponse.json({ error: "Selected station does not exist." }, { status: 400 });
     return apiError(error);
   }
 }
@@ -56,7 +65,7 @@ export async function DELETE(req: Request) {
     await prisma.employee.delete({ where: { id: employeeId } });
     return NextResponse.json({ data: true });
   } catch (error) {
-    if (hasPrismaCode(error, "P2025")) return NextResponse.json({ error: "Employee not found." }, { status: 404 });
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2025") return NextResponse.json({ error: "Employee not found." }, { status: 404 });
     return apiError(error);
   }
 }

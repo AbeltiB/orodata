@@ -56,28 +56,10 @@ export default function Dashboard() {
 
   const loadAll = useCallback(async () => {
     setLoading(true); setError("");
-    const resources = ["stations", "employees", "pos", "fares"] as const;
-    const results = await Promise.allSettled(
-      resources.map((resource) =>
-        fetch(`/api/${resource}`, { cache: "no-store" }).then(async (res) => {
-          const body = await res.json();
-          if (!res.ok) throw new Error(body.error ?? `Failed to load ${resource}`);
-          return body.data;
-        }),
-      ),
-    );
-
-    const failures = results
-      .map((result, index) => (result.status === "rejected" ? `${resources[index]}: ${result.reason instanceof Error ? result.reason.message : "failed to load"}` : null))
-      .filter(Boolean);
-
-    const [s, e, p, f] = results;
-    if (s.status === "fulfilled") setStations(s.value);
-    if (e.status === "fulfilled") setEmployees(e.value);
-    if (p.status === "fulfilled") setPos(p.value);
-    if (f.status === "fulfilled") setFares(f.value);
-    if (failures.length) setError(`Some data could not be loaded. ${failures.join(" | ")}`);
-    setLoading(false);
+    try {
+      const [s, e, p, f] = await Promise.all(["stations", "employees", "pos", "fares"].map((r) => fetch(`/api/${r}`, { cache: "no-store" }).then(async (res) => { const body = await res.json(); if (!res.ok) throw new Error(body.error ?? `Failed to load ${r}`); return body.data; })));
+      setStations(s); setEmployees(e); setPos(p); setFares(f);
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed to load data."); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { const handle = window.setTimeout(() => void loadAll(), 0); return () => window.clearTimeout(handle); }, [loadAll]);
