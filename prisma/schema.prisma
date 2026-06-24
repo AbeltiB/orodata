@@ -36,6 +36,7 @@ model Employee {
   role        String
   username    String
   password    String
+  isActive    Boolean @default(true)
   station_id  Int
   station     Station @relation(fields: [station_id], references: [id])
 

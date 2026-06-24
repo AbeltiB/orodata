@@ -1,54 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
-  const fares = await prisma.fare.findMany({ orderBy: { id: "asc" } });
-  return NextResponse.json({ data: fares });
-}
-
-export async function POST(req: Request) {
-  const body = await req.json();
-  const { vehicle_kind, level, road_type, multiplier } = body;
-
-  if (!vehicle_kind || !level || !road_type || multiplier == null) {
-    return NextResponse.json({ error: "All fare fields are required." }, { status: 400 });
-  }
-
-  const parsedMultiplier = Number(multiplier);
-  if (Number.isNaN(parsedMultiplier) || parsedMultiplier <= 0) {
-    return NextResponse.json({ error: "Multiplier must be a positive number." }, { status: 400 });
-  }
-
-  await prisma.fare.create({ data: { vehicle_kind, level, road_type, multiplier: parsedMultiplier } });
-
-  return NextResponse.json({ data: true });
-}
-
-export async function PATCH(req: Request) {
-  const body = await req.json();
-  const { id, vehicle_kind, level, road_type, multiplier } = body;
-
-  if (!id || !vehicle_kind || !level || !road_type || multiplier == null) {
-    return NextResponse.json({ error: "All fare fields are required for update." }, { status: 400 });
-  }
-
-  const parsedMultiplier = Number(multiplier);
-  if (Number.isNaN(parsedMultiplier) || parsedMultiplier <= 0) {
-    return NextResponse.json({ error: "Multiplier must be a positive number." }, { status: 400 });
-  }
-
-  await prisma.fare.update({ where: { id }, data: { vehicle_kind, level, road_type, multiplier: parsedMultiplier } });
-
-  return NextResponse.json({ data: true });
-}
-
-export async function DELETE(req: Request) {
-  const { id } = await req.json();
-
-  if (!id) {
-    return NextResponse.json({ error: "Fare id is required." }, { status: 400 });
-  }
-
-  await prisma.fare.delete({ where: { id } });
-  return NextResponse.json({ data: true });
-}
+export const dynamic = "force-dynamic";
+const err=(e:unknown)=>NextResponse.json({error:e instanceof Error?e.message:"Unexpected server error."},{status:500});
+const id=(v:unknown)=>Number(v);
+function valid(b: Record<string, unknown>){const m=Number(b.multiplier); return b.vehicle_kind&&b.level&&b.road_type&&Number.isFinite(m)&&m>0;}
+export async function GET(){try{return NextResponse.json({data:await prisma.fare.findMany({orderBy:{id:"asc"}})})}catch(e){return err(e)}}
+export async function POST(req:Request){try{const b=await req.json(); if(!valid(b))return NextResponse.json({error:"Vehicle, road, level, and a positive multiplier are required."},{status:400}); return NextResponse.json({data:await prisma.fare.create({data:{vehicle_kind:String(b.vehicle_kind),road_type:String(b.road_type),level:String(b.level),multiplier:Number(b.multiplier)}})})}catch(e){return err(e)}}
+export async function PATCH(req:Request){try{const b=await req.json(); const fareId=id(b.id); if(!fareId||!valid(b))return NextResponse.json({error:"Fare id, vehicle, road, level, and a positive multiplier are required."},{status:400}); return NextResponse.json({data:await prisma.fare.update({where:{id:fareId},data:{vehicle_kind:String(b.vehicle_kind),road_type:String(b.road_type),level:String(b.level),multiplier:Number(b.multiplier)}})})}catch(e){if(typeof e === "object" && e !== null && "code" in e && e.code==="P2025")return NextResponse.json({error:"Fare not found."},{status:404}); return err(e)}}
+export async function DELETE(req:Request){try{const fareId=id((await req.json()).id); if(!fareId)return NextResponse.json({error:"Fare id is required."},{status:400}); await prisma.fare.delete({where:{id:fareId}}); return NextResponse.json({data:true})}catch(e){if(typeof e === "object" && e !== null && "code" in e && e.code==="P2025")return NextResponse.json({error:"Fare not found."},{status:404}); return err(e)}}
